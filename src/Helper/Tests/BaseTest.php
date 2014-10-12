@@ -11,21 +11,11 @@ require_once(__DIR__.'/../../../lib/Kaltura/autoload.php');
 
 class BaseTest extends \PHPUnit_Framework_TestCase {
 
-    public static $container;
+    public static $client;
 
     protected $_container;
 
     public static function setUpBeforeClass()
-    {
-        self::$container = self::getContainer();
-    }
-
-    public function setUp()
-    {
-        $this->_container = self::$container;
-    }
-
-    public static function getContainer()
     {
         $container = new \Kmig\Container();
         $serviceUrl = getenv('KALTURA_SERVICE_URL');
@@ -38,7 +28,14 @@ class BaseTest extends \PHPUnit_Framework_TestCase {
             $container['partnerId'] = $partnerId;
             $container['partnerAdminSecret'] = $adminSecret;
         }
-        return $container;
+        self::$client = $container['client'];
+    }
+
+    public function setUp()
+    {
+        $this->_container = new \Kmig\Container(array(
+            'client' => self::$client
+        ));
     }
 
     /**

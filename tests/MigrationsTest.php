@@ -2,7 +2,7 @@
 
 use Kmig\Helper\Tests\BaseTest;
 
-class MainTest extends BaseTest {
+class MigrationsTest extends BaseTest {
 
     public function testCategory()
     {

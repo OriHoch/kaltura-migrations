@@ -3,4 +3,4 @@ php:
   - 5.3
 script:
   - composer install
-  - vendor/bin/phpunit tests/MainTest.php
+  - vendor/bin/phpunit tests/

@@ -37,7 +37,7 @@ class Migrator extends Base {
             $this->_client()->data->update($dataEntry->id, $newEntry);
         } else {
             $newEntry->name = 'Kmig_Migrator_DataEntry';
-            $this->_client()->data->add($newEntry);
+            $this->_dataEntry = $this->_client()->data->add($newEntry);
         }
         $this->_dataCache = $data;
         return $this;
