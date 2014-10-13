@@ -6,6 +6,7 @@ class Migrator extends Base {
 
     protected $_dataCache = false;
     protected $_dataEntry = false;
+    protected $_direction = 'up';
 
     /** @var Migrator\Entry */
     public $entry;
@@ -36,7 +37,7 @@ class Migrator extends Base {
         if (!empty($dataEntry)) {
             $this->_client()->data->update($dataEntry->id, $newEntry);
         } else {
-            $newEntry->name = 'Kmig_Migrator_DataEntry';
+            $newEntry->name = $this->_getDataEntryName();
             $this->_dataEntry = $this->_client()->data->add($newEntry);
         }
         $this->_dataCache = $data;
@@ -49,6 +50,23 @@ class Migrator extends Base {
         return array_key_exists($id, $data);
     }
 
+    public function setDirectionUp()
+    {
+        $this->_direction = 'up';
+        return $this;
+    }
+
+    public function setDirectionDown()
+    {
+        $this->_direction = 'down';
+        return $this;
+    }
+
+    public function isDirectionDown()
+    {
+        return ($this->_direction == 'down');
+    }
+
     /**
      * @return \Kaltura_Client_Type_DataEntry
      */
@@ -56,7 +74,7 @@ class Migrator extends Base {
     {
         if ($this->_dataEntry === false) {
             $filter = new \Kaltura_Client_Type_DataEntryFilter();
-            $filter->nameEqual = 'Kmig_Migrator_DataEntry';
+            $filter->nameEqual = $this->_getDataEntryName();
             $filter->orderBy = \Kaltura_Client_Enum_DataEntryOrderBy::CREATED_AT_DESC;
             $pager = new \Kaltura_Client_Type_FilterPager();
             $pager->pageSize = '1';
@@ -82,6 +100,14 @@ class Migrator extends Base {
             $this->_dataCache = $data;
         }
         return $this->_dataCache;
+    }
+
+    protected function _getDataEntryName()
+    {
+        if (!isset($this->_container['Kmig_Migrator_ID']) || empty($this->_container['Kmig_Migrator_ID'])) {
+            throw new \Exception('Kmig_Migrator_ID must be set in container');
+        }
+        return 'Kmig_Migrator_DataEntry_'.$this->_container['Kmig_Migrator_ID'];
     }
 
 }

@@ -7,17 +7,23 @@ class Container extends \Pimple\Container {
     public function __construct(array $values = array())
     {
         if (empty($values)) $values = array();
+        $serviceUrl = getenv('KALTURA_SERVICE_URL');
+        $partnerId = getenv('KALTURA_PARTNER_ID');
+        $adminSecret = getenv('KALTURA_ADMIN_SECRET');
         $values = array_merge(array(
             'migrator' => function($c) {
                 return new \Kmig\Migrator($c);
             },
-            'serviceUrl' => 'http://kaltura.local',
+            'phpmig.adapter' => function($c) {
+                return new \Kmig\Helper\Phpmig\KmigAdapter($c);
+            },
+            'serviceUrl' => empty($serviceUrl) ? 'http://kaltura.local' : $serviceUrl,
             'adminConsoleUser' => 'admin@kaltura.local',
             'adminConsolePassword' => 'Kaltura1!',
             'defaultServerDomain' => 'kaltura.local',
             'defaultPassword' => 'Kaltura1!',
-            'partnerId' => '',
-            'partnerAdminSecret' => '',
+            'partnerId' => empty($partnerId) ? '' : $partnerId,
+            'partnerAdminSecret' => empty($adminSecret) ? '' : $adminSecret,
             'partnerSessionUserId' => 'kmiguser',
             'client' => function($c) {
                 if (empty($c['partnerId']) || empty($c['partnerAdminSecret'])) {

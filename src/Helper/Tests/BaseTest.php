@@ -18,23 +18,14 @@ class BaseTest extends \PHPUnit_Framework_TestCase {
     public static function setUpBeforeClass()
     {
         $container = new \Kmig\Container();
-        $serviceUrl = getenv('KALTURA_SERVICE_URL');
-        $partnerId = getenv('KALTURA_PARTNER_ID');
-        $adminSecret = getenv('KALTURA_ADMIN_SECRET');
-        if (!empty($serviceUrl)) {
-            $container['serviceUrl'] = $serviceUrl;
-        }
-        if (!empty($partnerId) && !empty($adminSecret)) {
-            $container['partnerId'] = $partnerId;
-            $container['partnerAdminSecret'] = $adminSecret;
-        }
         self::$client = $container['client'];
     }
 
     public function setUp()
     {
         $this->_container = new \Kmig\Container(array(
-            'client' => self::$client
+            'client' => self::$client,
+            'Kmig_Migrator_ID' => 'Kmig_BaseTest',
         ));
     }
 

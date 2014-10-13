@@ -51,14 +51,19 @@ class CategoryObject extends \Kmig\Base {
     public function commit($migratorId = null)
     {
         if (empty($migratorId)) $migratorId = $this->_name;
-        if ($this->_migrator()->exists($migratorId)) throw new \Exception('migrator id already exists');
-        $category = new \Kaltura_Client_Type_Category();
-        $category->name = $this->_name;
-        if (!empty($this->_parentCategoryMigratorId)) {
-            $category->parentId = $this->_migrator()->category->get($this->_parentCategoryMigratorId)->id;
+        if ($this->_migrator()->isDirectionDown()) {
+            $category = $this->_migrator()->category->get($migratorId);
+            $this->_client()->category->delete($category->id);
+        } else {
+            if ($this->_migrator()->exists($migratorId)) throw new \Exception('migrator id already exists');
+            $category = new \Kaltura_Client_Type_Category();
+            $category->name = $this->_name;
+            if (!empty($this->_parentCategoryMigratorId)) {
+                $category->parentId = $this->_migrator()->category->get($this->_parentCategoryMigratorId)->id;
+            }
+            $category = $this->_client()->category->add($category);
+            $this->_migrator()->category->set($migratorId, $category);
         }
-        $category = $this->_client()->category->add($category);
-        $this->_migrator()->category->set($migratorId, $category);
         return $this->_migrator();
     }
 

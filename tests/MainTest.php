@@ -40,9 +40,31 @@ class MainTest extends BaseTest {
         $this->_migrator()->set('test', '123456');
         $this->assertEquals('123456', $this->_migrator()->get('test'));
         $container = new Kmig\Container(array(
-            'client' => self::$client
+            'client' => self::$client,
+            'Kmig_Migrator_ID' => 'Kmig_BaseTest',
         ));
         $this->assertEquals('123456', $container['migrator']->get('test'));
+    }
+
+    public function testDownEntry()
+    {
+        $this->_migrator()->entry->add('foo3')->commit();
+        $entryId = $this->_migrator()->entry->get('foo3')->id;
+        $this->assertEquals('foo3', $this->_client()->baseEntry->get($entryId)->name);
+        $this->_migrator()->setDirectionDown()->entry->add('foo3')->commit();
+        $this->setExpectedException('Kaltura_Client_Exception');
+        $this->_client()->baseEntry->get($entryId);
+    }
+
+    public function testDownCategory()
+    {
+        $uid = uniqid();
+        $this->_migrator()->category->add($uid)->commit();
+        $categoryId = $this->_migrator()->category->get($uid)->id;
+        $this->assertEquals($uid, $this->_client()->category->get($categoryId)->name);
+        $this->_migrator()->setDirectionDown()->category->add($uid)->commit();
+        $this->setExpectedException('Kaltura_Client_Exception');
+        $this->_client()->category->get($categoryId);
     }
 
 }

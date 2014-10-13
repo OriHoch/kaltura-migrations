@@ -1,10 +1,8 @@
 <?php
 
-class AddEntries extends Kmig\Phpmig\Migration
+class AddEntries extends \Kmig\Helper\Phpmig\KmigMigration
 {
-    /**
-     * Do the migration
-     */
+
     public function up()
     {
         $this->_migrator()
@@ -12,11 +10,4 @@ class AddEntries extends Kmig\Phpmig\Migration
         ;
     }
 
-    /**
-     * Undo the migration
-     */
-    public function down()
-    {
-        throw new Exception();
-    }
 }

@@ -1,10 +1,8 @@
 <?php
 
-class AddCategories extends Kmig\Phpmig\Migration
+class AddCategories extends \Kmig\Helper\Phpmig\KmigMigration
 {
-    /**
-     * Do the migration
-     */
+
     public function up()
     {
         $this->_migrator()
@@ -13,11 +11,4 @@ class AddCategories extends Kmig\Phpmig\Migration
         ;
     }
 
-    /**
-     * Undo the migration
-     */
-    public function down()
-    {
-        throw new Exception();
-    }
 }

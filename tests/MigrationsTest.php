@@ -40,7 +40,8 @@ class MigrationsTest extends BaseTest {
         $this->_migrator()->set('test', '123456');
         $this->assertEquals('123456', $this->_migrator()->get('test'));
         $container = new Kmig\Container(array(
-            'client' => self::$client
+            'client' => self::$client,
+            'Kmig_Migrator_ID' => 'Kmig_BaseTest',
         ));
         $this->assertEquals('123456', $container['migrator']->get('test'));
     }
