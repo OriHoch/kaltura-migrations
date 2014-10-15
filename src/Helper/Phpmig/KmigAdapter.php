@@ -35,6 +35,7 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
      */
     public function fetchAll()
     {
+        if (!$this->_hasSchema()) $this->_createSchema();
         $versions = $this->_migrator()->get('phpmig_versions');
         sort($versions);
         return $versions;
@@ -48,6 +49,7 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
      */
     public function up(\Phpmig\Migration\Migration $migration)
     {
+        if (!$this->_hasSchema()) $this->_createSchema();
         $versions = $this->fetchAll();
         if (in_array($migration->getVersion(), $versions)) {
             return $this;
@@ -65,6 +67,7 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
      */
     public function down(\Phpmig\Migration\Migration $migration)
     {
+        if (!$this->_hasSchema()) $this->_createSchema();
         $versions = $this->fetchAll();
         if (!in_array($migration->getVersion(), $versions)) {
             return $this;
@@ -74,22 +77,37 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
         return $this;
     }
 
+    public function hasSchema()
+    {
+        return true;
+    }
+
+    public function createSchema()
+    {
+        return $this;
+    }
+
+    public static function setContainerValuesFromDataFile($container, $datafilename)
+    {
+        $data = json_decode(file_get_contents($datafilename), true);
+        $container['serviceUrl'] = $data['serviceUrl'];
+        $container['partnerId'] = $data['partnerId'];
+        $container['partnerAdminSecret'] = $data['adminSecret'];
+        $container['partnerSecret'] = $data['secret'];
+    }
+
     /**
      * Is the schema ready?
      *
      * @return bool
      */
-    public function hasSchema()
+    protected function _hasSchema()
     {
         $datafilename = $this->_getDataFileName();
         if (!file_exists($datafilename)) {
             return false;
         } else {
-            $data = json_decode(file_get_contents($datafilename), true);
-            $this->_container['serviceUrl'] = $data['serviceUrl'];
-            $this->_container['partnerId'] = $data['partnerId'];
-            $this->_container['partnerAdminSecret'] = $data['adminSecret'];
-            $this->_container['partnerSecret'] = $data['secret'];
+            self::setContainerValuesFromDataFile($this->_container, $datafilename);
             return true;
         }
     }
@@ -99,7 +117,7 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
      *
      * @return \Phpmig\Adapter\AdapterInterface
      */
-    public function createSchema()
+    protected function _createSchema()
     {
         $data = array();
         $client = $this->_client();

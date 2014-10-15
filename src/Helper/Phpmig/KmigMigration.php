@@ -25,6 +25,11 @@ class KmigMigration extends \Phpmig\Migration\Migration {
      */
     public function down()
     {
+        $this->_autoMigrateDown();
+    }
+
+    protected function _autoMigrateDown()
+    {
         $this->_migrator()->setDirectionDown();
         $this->up();
     }
