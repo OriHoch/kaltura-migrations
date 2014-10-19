@@ -27,6 +27,24 @@ class Migrator extends Base {
         return $data[$id];
     }
 
+    public function clear()
+    {
+        $dataEntry = $this->_getDataEntry();
+        $data = $this->_getData($dataEntry);
+        if (!empty($data)) {
+            $newEntry = new \Kaltura_Client_Type_DataEntry();
+            $newEntry->dataContent = json_encode(array());
+            if (!empty($dataEntry)) {
+                $this->_client()->data->update($dataEntry->id, $newEntry);
+            } else {
+                $newEntry->name = $this->_getDataEntryName();
+                $this->_dataEntry = $this->_client()->data->add($newEntry);
+            }
+            $this->_dataCache = array();
+        }
+        return $this;
+    }
+
     public function set($id, $val)
     {
         $dataEntry = $this->_getDataEntry();

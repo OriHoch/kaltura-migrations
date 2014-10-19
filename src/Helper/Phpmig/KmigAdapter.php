@@ -131,6 +131,7 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
         if (!file_put_contents($this->_getDataFileName(), json_encode($data))) {
             throw new \Exception('failed to create data file');
         };
+        $this->_migrator()->clear();
         $this->_migrator()->set('phpmig_versions', array());
         return $this;
     }
