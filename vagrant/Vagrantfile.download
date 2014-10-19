@@ -1,3 +1,6 @@
+# this downloads a complete an ready-to-use kaltura server from the cloud
+# this server might have an older kaltura server, so it might be better to use the from-scratch Vagrantfile instead
+
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
