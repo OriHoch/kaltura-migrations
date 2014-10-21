@@ -39,4 +39,24 @@ class Client {
         return $client;
     }
 
+    public static function setPartnerPassword($adminConsoleUrl, $adminUser, $adminPassword, $partnerId, $partnerEmail, $newPassword)
+    {
+        $cmd = ''
+            .'casperjs test --no-colors '.escapeshellarg(__DIR__.'/setPartnerPassword.casper.js')
+            .' '.escapeshellarg('--adminConsoleUrl='.$adminConsoleUrl)
+            .' '.escapeshellarg('--adminUser='.$adminUser)
+            .' '.escapeshellarg('--adminPassword='.$adminPassword)
+            .' '.escapeshellarg('--partnerId='.$partnerId)
+            .' '.escapeshellarg('--partnerEmail='.$partnerEmail)
+            .' '.escapeshellarg('--newPassword='.$newPassword)
+        ;
+        exec($cmd, $output, $returnvar);
+        if ($returnvar !== 0) {
+            var_dump($cmd);
+            throw new \Exception('failed to run!');
+        } else {
+            echo "OK!\n";
+        }
+    }
+
 } 
