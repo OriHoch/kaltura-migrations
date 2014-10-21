@@ -94,6 +94,8 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
         $container['partnerId'] = $data['partnerId'];
         $container['partnerAdminSecret'] = $data['adminSecret'];
         $container['partnerSecret'] = $data['secret'];
+        $container['partnerEmail'] = $data['partnerEmail'];
+        $container['partnerPassword'] = $data['partnerPassword'];
     }
 
     /**
@@ -121,13 +123,14 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
     {
         $data = array();
         $client = $this->_client();
-        $config = $client->getConfig();
-        $data['partnerId'] = $config->partnerId;
-        $data['serviceUrl'] = $config->serviceUrl;
+        $data['partnerId'] = $this->_container['partnerId'];
         /** @var \Kaltura_Client_Type_Partner $partner */
         $partner = $client->partner->get($data['partnerId']);
-        $data['adminSecret'] = $partner->adminSecret;
+        $data['serviceUrl'] = $this->_container['serviceUrl'];
+        $data['adminSecret'] = $this->_container['partnerAdminSecret'];
         $data['secret'] = $partner->secret;
+        $data['partnerEmail'] = $this->_container['partnerEmail'];
+        $data['partnerPassword'] = $this->_container['partnerPassword'];
         if (!file_put_contents($this->_getDataFileName(), json_encode($data))) {
             throw new \Exception('failed to create data file');
         };
