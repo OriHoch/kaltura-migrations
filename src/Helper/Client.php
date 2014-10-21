@@ -5,6 +5,12 @@ namespace Kmig\Helper;
 
 class Client {
 
+    /**
+     * @param $defaultServerDomain
+     * @param $defaultPassword
+     * @param $rootClient
+     * @return \Kaltura_Client_Type_Partner
+     */
     public static function createPublisher($defaultServerDomain, $defaultPassword, $rootClient)
     {
         $partner = new \Kaltura_Client_Type_Partner();
@@ -54,8 +60,6 @@ class Client {
         if ($returnvar !== 0) {
             var_dump($cmd);
             throw new \Exception('failed to run!');
-        } else {
-            echo "OK!\n";
         }
     }
 

@@ -14,6 +14,8 @@ class Container extends \Pimple\Container {
         $adminConsolePassword = getenv('KALTURA_ADMIN_CONSOLE_PASSWORD');
         $defaultServerDomain = getenv('KALTURA_DEFAULT_SERVER_DOMAIN');
         $defaultPassword = getenv('KALTURA_DEFAULT_PASSWORD');
+        $partnerEmail = getenv('KALTURA_PARTNER_EMAIL');
+        $partnerPassword = getenv('KALTURA_PARTNER_PASSWORD');
         $values = array_merge(array(
             'migrator' => function($c) {
                 return new \Kmig\Migrator($c);
@@ -29,11 +31,16 @@ class Container extends \Pimple\Container {
             'partnerId' => empty($partnerId) ? '' : $partnerId,
             'partnerAdminSecret' => empty($adminSecret) ? '' : $adminSecret,
             'partnerSessionUserId' => 'kmiguser',
+            'partnerEmail' => empty($partnerEmail) ? '' : $partnerEmail,
+            'partnerPassword' => empty($partnerPassword) ? '' : $partnerPassword,
             'client' => function($c) {
-                if (empty($c['partnerId']) || empty($c['partnerAdminSecret'])) {
+                if (empty($c['partnerId']) || empty($c['partnerAdminSecret']) || empty($c['partnerEmail']) || empty($c['partnerPassword'])) {
                     $partner = Helper\Client::createPublisher($c['defaultServerDomain'], $c['defaultPassword'], $c['rootClient']);
                     $c['partnerId'] = $partner->id;
                     $c['partnerAdminSecret'] = $partner->adminSecret;
+                    $c['partnerEmail'] = $partner->adminEmail;
+                    $c['partnerPassword'] = $c['defaultPassword'];
+                    Helper\Client::setPartnerPassword($c['serviceUrl'].'/admin_console', $c['adminConsoleUser'], $c['adminConsolePassword'], $c['partnerId'], $c['partnerEmail'], $c['defaultPassword']);
                 }
                 return Helper\Client::getClient($c['partnerId'], $c['serviceUrl'], $c['partnerSessionUserId'], $c['partnerAdminSecret']);
             },
