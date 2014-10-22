@@ -15,8 +15,19 @@ class Entry extends \Kmig\Base {
 
     public function get($migratorId)
     {
-        $id = $this->_migrator()->get('KmigEntry_'.$migratorId);
-        return $this->_client()->baseEntry->get($id);
+        $entry = false;
+        $id = $this->_migrator()->get('KmigEntry_'.$migratorId, '');
+        if (!empty($id)) {
+            try {
+                $entry = $this->_client()->baseEntry->get($id);
+            } catch (\Kaltura_Client_Exception $e) {
+                if ($e->getCode() != 'ENTRY_ID_NOT_FOUND') {
+                    throw $e;
+                }
+            }
+
+        }
+        return $entry;
     }
 
     public function set($migratorId, $entry)
@@ -53,19 +64,30 @@ class EntryObject extends \Kmig\Base {
         return $this;
     }
 
+    public function commitMany($howMany, $migratorId = null)
+    {
+        if (empty($migratorId)) $migratorId = $this->_name;
+        for ($i = 0; $i < $howMany; $i++) {
+            $entry = $this->_migrator()->entry->add($this->_name.' '.$i, $this->_categoryMigratorId);
+            $entry->addContentFromFile($this->_contentFilename);
+            $entry->commit($migratorId.'_'.$i);
+        }
+        return $this->_migrator();
+    }
+
     public function commit($migratorId = null)
     {
         if (empty($migratorId)) $migratorId = $this->_name;
         if ($this->_migrator()->isDirectionDown()) {
-            $entry = $this->_migrator()->entry->get($migratorId);
-            $this->_client()->baseEntry->delete($entry->id);
+            $this->_migrator()->withoutEntitlement(function($migrator) use($migratorId){
+                if ($entry = $migrator->entry->get($migratorId)) {
+                    $migrator->getClient()->baseEntry->delete($entry->id);
+                };
+            });
         } else {
             if ($this->_migrator()->exists($migratorId)) throw new \Exception('migrator id already exists');
             $entry = new \Kaltura_Client_Type_BaseEntry();
             $entry->name = $this->_name;
-            if (!empty($this->_categoryMigratorId)) {
-                $entry->categoriesIds = $this->_migrator()->category->get($this->_categoryMigratorId)->id;
-            }
             $entry = $this->_client()->baseEntry->add($entry);
             if (!empty($this->_contentFilename)) {
                 $filename = $this->_contentFilename;
@@ -81,6 +103,13 @@ class EntryObject extends \Kmig\Base {
                 $resource = new \Kaltura_Client_Type_UploadedFileTokenResource();
                 $resource->token = $uploadToken->id;
                 $this->_client()->baseEntry->addContent($entry->id, $resource);
+            }
+            if (!empty($this->_categoryMigratorId)) {
+                $categoryId = $this->_migrator()->category->get($this->_categoryMigratorId)->id;
+                $categoryEntry = new \Kaltura_Client_Type_CategoryEntry();
+                $categoryEntry->entryId = $entry->id;
+                $categoryEntry->categoryId = $categoryId;
+                $this->_client()->categoryEntry->add($categoryEntry);
             }
             $this->_migrator()->entry->set($migratorId, $entry);
         }

@@ -19,8 +19,18 @@ class Category extends \Kmig\Base {
 
     public function get($migratorId)
     {
-        $id = $this->_migrator()->get('KmigCategory_'.$migratorId);
-        return $this->_client()->category->get($id);
+        $category = false;
+        $id = $this->_migrator()->get('KmigCategory_'.$migratorId, '');
+        if (!empty($id)) {
+            try {
+                $category = $this->_client()->category->get($id);
+            } catch (\Kaltura_Client_Exception $e) {
+                if ($e->getCode() != 'CATEGORY_NOT_FOUND') {
+                    throw $e;
+                }
+            }
+        }
+        return $category;
     }
 
     public function set($migratorId, $category)
@@ -35,6 +45,7 @@ class CategoryObject extends \Kmig\Base {
 
     protected $_name;
     protected $_parentCategoryMigratorId = null;
+    protected $_attributes = array();
 
     public function setName($name)
     {
@@ -48,12 +59,21 @@ class CategoryObject extends \Kmig\Base {
         return $this;
     }
 
+    public function setAttributes($attrs)
+    {
+        $this->_attributes = $attrs;
+        return $this;
+    }
+
     public function commit($migratorId = null)
     {
         if (empty($migratorId)) $migratorId = $this->_name;
         if ($this->_migrator()->isDirectionDown()) {
-            $category = $this->_migrator()->category->get($migratorId);
-            $this->_client()->category->delete($category->id);
+            $this->_migrator()->withoutEntitlement(function($migrator) use($migratorId){
+                if ($category = $migrator->category->get($migratorId)) {
+                    $migrator->getClient()->category->delete($category->id);
+                };
+            });
         } else {
             if ($this->_migrator()->exists($migratorId)) throw new \Exception('migrator id already exists');
             $category = new \Kaltura_Client_Type_Category();
@@ -61,8 +81,29 @@ class CategoryObject extends \Kmig\Base {
             if (!empty($this->_parentCategoryMigratorId)) {
                 $category->parentId = $this->_migrator()->category->get($this->_parentCategoryMigratorId)->id;
             }
-            $category = $this->_client()->category->add($category);
+            try {
+                $category = $this->_client()->category->add($category);
+            } catch (\Kaltura_Client_Exception $e) {
+                if ($e->getCode() == 'DUPLICATE_CATEGORY') {
+                    $filter = new \Kaltura_Client_Type_CategoryFilter();
+                    $filter->name = $this->_name;
+                    if (!empty($this->_parentCategoryMigratorId)) {
+                        $filter->parentIdEqual = $category->parentId;
+                    }
+                    $res = $this->_client()->category->listAction($filter);
+                    $category = $res->objects[0];
+                } else {
+                    throw $e;
+                }
+            }
             $this->_migrator()->category->set($migratorId, $category);
+            if (!empty($this->_attributes)) {
+                $updateCategory = new \Kaltura_Client_Type_Category();
+                foreach ($this->_attributes as $k=>$v) {
+                    $updateCategory->$k = $v;
+                }
+                $category = $this->_client()->category->update($category->id, $updateCategory);
+            }
         }
         return $this->_migrator();
     }

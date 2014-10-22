@@ -24,13 +24,17 @@ class Client {
         return $rootClient->partner->register($partner, $cmsPassword, $templatePartnerID);
     }
 
-    public static function getClient($partnerId, $serviceUrl, $sessionUserId, $adminSecret)
+    public static function getClient($partnerId, $serviceUrl, $sessionUserId, $adminSecret, $privacyContext = null)
     {
         $config = new \Kaltura_Client_Configuration($partnerId);
         $config->serviceUrl = $serviceUrl;
         $client = new \Kaltura_Client_Client($config);
         $expirySeconds = 86400;
-        $privileges = 'disableentitlement';
+        if (empty($privacyContext)) {
+            $privileges = 'disableentitlement';
+        } else {
+            $privileges = "privacycontext:{$privacyContext},enableentitlement,sessionkey:{$sessionUserId}";
+        }
         $ks = $client->generateSessionV2($adminSecret, $sessionUserId, \Kaltura_Client_Enum_SessionType::ADMIN, $partnerId, $expirySeconds, $privileges);
         $client->setKs($ks);
         return $client;

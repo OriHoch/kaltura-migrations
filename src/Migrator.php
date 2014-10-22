@@ -4,9 +4,13 @@ namespace Kmig;
 
 class Migrator extends Base {
 
-    protected $_dataCache = false;
-    protected $_dataEntry = false;
     protected $_direction = 'up';
+
+    protected static $_dataCache = array();
+    protected static $_dataEntryId = array();
+
+    protected $_withEntitlement = false;
+    protected $_userClients = array();
 
     /** @var Migrator\Entry */
     public $entry;
@@ -21,44 +25,66 @@ class Migrator extends Base {
         $this->category = new Migrator\Category($container);
     }
 
-    public function get($id)
+    public function get($id, $def = null)
     {
-        $data = $this->_getData();
-        return $data[$id];
+        if ($this->exists($id)) {
+            $data = $this->_getData();
+            return $data[$id];
+        } elseif (is_null($def)) {
+            throw new \Exception('migrator id does not exist: '.$id);
+        } else {
+            return $def;
+        }
     }
 
     public function clear()
     {
-        $dataEntry = $this->_getDataEntry();
-        $data = $this->_getData($dataEntry);
-        if (!empty($data)) {
-            $newEntry = new \Kaltura_Client_Type_DataEntry();
-            $newEntry->dataContent = json_encode(array());
-            if (!empty($dataEntry)) {
-                $this->_client()->data->update($dataEntry->id, $newEntry);
-            } else {
-                $newEntry->name = $this->_getDataEntryName();
-                $this->_dataEntry = $this->_client()->data->add($newEntry);
-            }
-            $this->_dataCache = array();
+        $this->_setDataCache(array());
+        $newEntry = new \Kaltura_Client_Type_DataEntry();
+        $newEntry->dataContent = json_encode(array());
+        if ($this->_getDataEntryId()) {
+            $this->_client(true)->data->update($this->_getDataEntryId(), $newEntry);
+        } else {
+            $newEntry->name = $this->_getDataEntryName();
+            $this->_setDataEntryIdCache($this->_client(true)->data->add($newEntry)->id);
         }
         return $this;
     }
 
+    public function withEntitlement($privacyContext, $sessionKey, $callback)
+    {
+        $curEntitlements = $this->_withEntitlement;
+        $this->_withEntitlement = array($privacyContext, $sessionKey);
+        $callback($this);
+        $this->_withEntitlement = $curEntitlements;
+    }
+
+    public function withoutEntitlement($callback)
+    {
+        $curEntitlements = $this->_withEntitlement;
+        $this->_withEntitlement = false;
+        $callback($this);
+        $this->_withEntitlement = $curEntitlements;
+    }
+
+    public function getClient()
+    {
+        return $this->_client();
+    }
+
     public function set($id, $val)
     {
-        $dataEntry = $this->_getDataEntry();
-        $data = $this->_getData($dataEntry);
+        $data = $this->_getData();
         $data[$id] = $val;
+        $this->_setDataCache($data);
         $newEntry = new \Kaltura_Client_Type_DataEntry();
         $newEntry->dataContent = json_encode($data);
-        if (!empty($dataEntry)) {
-            $this->_client()->data->update($dataEntry->id, $newEntry);
+        if ($this->_getDataEntryId()) {
+            $this->_client(true)->data->update($this->_getDataEntryId(), $newEntry);
         } else {
             $newEntry->name = $this->_getDataEntryName();
-            $this->_dataEntry = $this->_client()->data->add($newEntry);
+            $this->_setDataEntryIdCache($this->_client(true)->data->add($newEntry)->id);
         }
-        $this->_dataCache = $data;
         return $this;
     }
 
@@ -85,39 +111,80 @@ class Migrator extends Base {
         return ($this->_direction == 'down');
     }
 
+    public static function clearCaches()
+    {
+        self::$_dataCache = array();
+        self::$_dataEntryId = array();
+    }
+
     /**
      * @return \Kaltura_Client_Type_DataEntry
      */
-    protected function _getDataEntry()
+    protected function _getDataEntryId()
     {
-        if ($this->_dataEntry === false) {
+        if (is_null($this->_getDataEntryIdCache())) {
             $filter = new \Kaltura_Client_Type_DataEntryFilter();
             $filter->nameEqual = $this->_getDataEntryName();
             $filter->orderBy = \Kaltura_Client_Enum_DataEntryOrderBy::CREATED_AT_DESC;
             $pager = new \Kaltura_Client_Type_FilterPager();
             $pager->pageSize = '1';
-            $res = $this->_client()->data->listAction($filter, $pager);
+            $res = $this->_client(true)->data->listAction($filter, $pager);
             if ($res->totalCount > 0) {
-                $this->_dataEntry = $res->objects[0];
+                $dataEntryId = $res->objects[0]->id;
             } else {
-                $this->_dataEntry = null;
+                $dataEntryId = false;
             }
+            $this->_setDataEntryIdCache($dataEntryId);
+            return $dataEntryId;
+        } else {
+            return $this->_getDataEntryIdCache();
         }
-        return $this->_dataEntry;
     }
 
-    protected function _getData($dataEntry = null)
+    protected function _getData()
     {
-        if ($this->_dataCache === false) {
-            $dataEntry = empty($dataEntry) ? $this->_getDataEntry() : $dataEntry;
-            if (!empty($dataEntry)) {
-                $data = json_decode($dataEntry->dataContent, true);
-            } else {
-                $data = array();
-            }
-            $this->_dataCache = $data;
+        if (is_null($this->_getDataCache())) {
+            $entryId = $this->_getDataEntryId();
+            $data = json_decode($this->_client(true)->baseEntry->get($entryId)->dataContent, true);
+            $this->_setDataCache($data);
+            return $data;
+        } else {
+            return $this->_getDataCache();
         }
-        return $this->_dataCache;
+    }
+
+    protected function _getDataCache()
+    {
+        if (array_key_exists($this->_getCacheId(), self::$_dataCache)) {
+            $data = self::$_dataCache[$this->_getCacheId()];
+        } else {
+            $data = null;
+        }
+        return $data;
+    }
+
+    protected function _getDataEntryIdCache()
+    {
+        if (array_key_exists($this->_getCacheId(), self::$_dataEntryId)) {
+            return self::$_dataEntryId[$this->_getCacheId()];
+        } else {
+            return null;
+        }
+    }
+
+    protected function _setDataCache($data)
+    {
+        self::$_dataCache[$this->_getCacheId()] = $data;
+    }
+
+    protected function _setDataEntryIdCache($entryId)
+    {
+        self::$_dataEntryId[$this->_getCacheId()] = $entryId;
+    }
+
+    protected function _getCacheId()
+    {
+        return $this->_getDataEntryName();
     }
 
     protected function _getDataEntryName()
@@ -126,6 +193,22 @@ class Migrator extends Base {
             throw new \Exception('Kmig_Migrator_ID must be set in container');
         }
         return 'Kmig_Migrator_DataEntry_'.$this->_container['Kmig_Migrator_ID'];
+    }
+
+    /**
+     * @return \Kaltura_Client_Client
+     */
+    protected function _client($ignoreUserId = false)
+    {
+        if ($ignoreUserId || !$this->_withEntitlement) {
+            return $this->_container['client'];
+        } else {
+            list($privacyContext, $sessionKey) = $this->_withEntitlement;
+            if (!array_key_exists($privacyContext.'::'.$sessionKey, $this->_userClients)) {
+                $this->_userClients[$privacyContext.'::'.$sessionKey] = Helper\Client::getClient($this->_container['partnerId'], $this->_container['serviceUrl'], $sessionKey, $this->_container['partnerAdminSecret'], $privacyContext);
+            }
+            return $this->_userClients[$privacyContext.'::'.$sessionKey];
+        }
     }
 
 }

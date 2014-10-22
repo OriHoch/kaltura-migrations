@@ -25,7 +25,7 @@ abstract class Base {
      */
     protected function _client()
     {
-        return $this->_container['client'];
+        return $this->_migrator()->getClient();
     }
 
     /**
