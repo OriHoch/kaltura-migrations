@@ -55,16 +55,18 @@ class Migrator extends Base {
     {
         $curEntitlements = $this->_withEntitlement;
         $this->_withEntitlement = array($privacyContext, $sessionKey);
-        $callback($this);
+        $res = $callback($this);
         $this->_withEntitlement = $curEntitlements;
+        return $res;
     }
 
     public function withoutEntitlement($callback)
     {
         $curEntitlements = $this->_withEntitlement;
         $this->_withEntitlement = false;
-        $callback($this);
+        $res = $callback($this);
         $this->_withEntitlement = $curEntitlements;
+        return $res;
     }
 
     public function getClient()

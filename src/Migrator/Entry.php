@@ -70,7 +70,7 @@ class EntryObject extends \Kmig\Base {
         for ($i = 0; $i < $howMany; $i++) {
             $entry = $this->_migrator()->entry->add($this->_name.' '.$i, $this->_categoryMigratorId);
             $entry->addContentFromFile($this->_contentFilename);
-            $entry->commit($migratorId.'_'.$i);
+            $entry->commit($migratorId.' '.$i);
         }
         return $this->_migrator();
     }
