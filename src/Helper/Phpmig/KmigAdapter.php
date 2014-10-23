@@ -98,6 +98,14 @@ class KmigAdapter implements \Phpmig\Adapter\AdapterInterface {
         $container['partnerPassword'] = $data['partnerPassword'];
     }
 
+    public function destroy()
+    {
+        $datafile = $this->_getDataFileName();
+        if (file_exists($datafile)) {
+            unlink($datafile);
+        }
+    }
+
     /**
      * Is the schema ready?
      *

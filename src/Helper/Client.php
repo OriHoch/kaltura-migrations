@@ -67,4 +67,20 @@ class Client {
         }
     }
 
+    public static function deletePartner($serviceUrl, $user, $password, $partnerId)
+    {
+        $cmd = ''
+            .'casperjs test --no-colors '.escapeshellarg(__DIR__.'/deletePartner.casper.js')
+            .' '.escapeshellarg('--serviceUrl='.$serviceUrl)
+            .' '.escapeshellarg('--user='.$user)
+            .' '.escapeshellarg('--password='.$password)
+            .' '.escapeshellarg('--partnerId='.$partnerId)
+        ;
+        exec($cmd, $output, $returnvar);
+        if ($returnvar !== 0) {
+            var_dump($cmd);
+            throw new \Exception('failed to run!');
+        }
+    }
+
 } 

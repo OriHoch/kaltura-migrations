@@ -2,6 +2,8 @@
 
 namespace Kmig;
 
+use Kmig\Helper\Phpmig\KmigAdapter;
+
 class Migrator extends Base {
 
     protected $_direction = 'up';
@@ -113,6 +115,22 @@ class Migrator extends Base {
         return ($this->_direction == 'down');
     }
 
+    public function destroy()
+    {
+        if ($dataEntryId = $this->_getDataEntryId()) {
+            $this->_client()->baseEntry->delete($dataEntryId);
+        }
+        /** @var \Kaltura_Client_Client $rootClient */
+        $c = $this->_container;
+        if (!empty($c['adminConsoleUser']) && !empty($c['adminConsolePassword']) && !empty($c['serviceUrl']) && !empty($c['partnerId'])) {
+            Helper\Client::deletePartner($c['serviceUrl'], $c['adminConsoleUser'], $c['adminConsolePassword'], $c['partnerId']);
+        }
+        /** @var KmigAdapter $adapter */
+        $adapter = $this->_container['phpmig.adapter'];
+        $adapter->destroy();
+        self::clearCaches();
+    }
+
     public static function clearCaches()
     {
         self::$_dataCache = array();
@@ -146,8 +164,11 @@ class Migrator extends Base {
     protected function _getData()
     {
         if (is_null($this->_getDataCache())) {
-            $entryId = $this->_getDataEntryId();
-            $data = json_decode($this->_client(true)->baseEntry->get($entryId)->dataContent, true);
+            if ($entryId = $this->_getDataEntryId()) {
+                $data = json_decode($this->_client(true)->baseEntry->get($entryId)->dataContent, true);
+            } else {
+                $data = array();
+            };
             $this->_setDataCache($data);
             return $data;
         } else {

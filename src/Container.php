@@ -45,7 +45,11 @@ class Container extends \Pimple\Container {
                 return Helper\Client::getClient($c['partnerId'], $c['serviceUrl'], $c['partnerSessionUserId'], $c['partnerAdminSecret']);
             },
             'rootClient' => function($c) {
-                return Helper\Client::getRootClient($c['serviceUrl'], $c['adminConsoleUser'], $c['adminConsolePassword']);
+                if (!empty($c['adminConsoleUser']) && !empty($c['adminConsolePassword'])) {
+                    return Helper\Client::getRootClient($c['serviceUrl'], $c['adminConsoleUser'], $c['adminConsolePassword']);
+                } else {
+                    return false;
+                }
             }
         ), $values);
         parent::__construct($values);

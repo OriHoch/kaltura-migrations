@@ -6,6 +6,8 @@
 
 namespace Kmig\Helper\Tests;
 
+use Kmig\Migrator;
+
 require_once(__DIR__.'/../../../vendor/autoload.php');
 require_once(__DIR__.'/../../../lib/Kaltura/autoload.php');
 
@@ -27,6 +29,11 @@ class BaseTest extends \PHPUnit_Framework_TestCase {
             'client' => self::$client,
             'Kmig_Migrator_ID' => 'Kmig_BaseTest',
         ));
+    }
+
+    public static function tearDownAfterClass()
+    {
+        Migrator::clearCaches();
     }
 
     /**
