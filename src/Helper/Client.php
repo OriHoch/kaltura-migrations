@@ -79,6 +79,7 @@ class Client {
         exec($cmd, $output, $returnvar);
         if ($returnvar !== 0) {
             var_dump($cmd);
+            echo implode("\n", $output);
             throw new \Exception('failed to run!');
         }
     }

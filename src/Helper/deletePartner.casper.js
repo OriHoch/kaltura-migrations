@@ -19,7 +19,7 @@ var params = getParams(['serviceUrl', 'user', 'password', 'partnerId']);
 
 casper.test.begin('set partner password', 1, function suite(test) {
     casper.start()
-        .thenOpen('http://'+params.serviceUrl+'/admin_console/index.php/partner/list')
+        .thenOpen(''+params.serviceUrl+'/admin_console/index.php/partner/list')
         .waitForSelector('form.login').then(function(){
             casper.fill('form.login', {'email':params.user, 'password':params.password});
             casper.evaluate(function(){
